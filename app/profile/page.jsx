@@ -1,8 +1,9 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function ProfilePage() {
@@ -137,10 +138,27 @@ export default function ProfilePage() {
                   Admin
                 </span>
               )}
+              {user.role === "moderator" && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-700">
+                  Mod
+                </span>
+              )}
             </div>
             <p className="text-[13px] text-[var(--text-secondary)]">@{user.username}</p>
             <p className="text-[12px] text-[var(--text-secondary)]">Bergabung {joinDate}</p>
           </div>
+        </div>
+
+        {/* Stats */}
+        <div className="flex gap-6">
+          <Link href="/profile/following" className="text-center">
+            <p className="font-bold text-[var(--text)]">{user.followingCount || 0}</p>
+            <p className="text-[12px] text-[var(--text-secondary)]">Mengikuti</p>
+          </Link>
+          <Link href="/profile/followers" className="text-center">
+            <p className="font-bold text-[var(--text)]">{user.followersCount || 0}</p>
+            <p className="text-[12px] text-[var(--text-secondary)]">Pengikut</p>
+          </Link>
         </div>
       </div>
 
@@ -202,6 +220,16 @@ export default function ProfilePage() {
             {changingPassword ? "Mengubah..." : "Ubah Password"}
           </button>
         </form>
+      </div>
+
+      {/* Logout */}
+      <div className="mx-4 mb-6">
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="w-full py-2.5 bg-red-50 text-red-500 border border-red-200 rounded-lg text-[13px] font-medium hover:bg-red-100 transition-colors"
+        >
+          Keluar
+        </button>
       </div>
     </div>
   );

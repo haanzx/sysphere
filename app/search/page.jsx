@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import PostCard from "@/components/PostCard";
 
 export default function SearchPage() {
@@ -14,6 +15,7 @@ export default function SearchPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [followingMap, setFollowingMap] = useState({});
 
   useEffect(() => {
     if (status === "loading") return;
@@ -33,6 +35,12 @@ export default function SearchPage() {
       if (res.ok) {
         setUsers(data.users || []);
         setPosts(data.posts || []);
+
+        const followState = {};
+        for (const u of data.users || []) {
+          followState[u._id] = u.isFollowing || false;
+        }
+        setFollowingMap(followState);
       }
     } catch (error) {
       console.error("Gagal mencari");
@@ -40,6 +48,22 @@ export default function SearchPage() {
       setLoading(false);
     }
   }, [query, type]);
+
+  async function handleFollow(userId) {
+    try {
+      const isFollowing = followingMap[userId];
+      const method = isFollowing ? "DELETE" : "POST";
+      const res = await fetch(`/api/user/${userId}/follow`, { method });
+      if (res.ok) {
+        setFollowingMap((prev) => ({
+          ...prev,
+          [userId]: !isFollowing,
+        }));
+      }
+    } catch (error) {
+      console.error("Gagal follow/unfollow");
+    }
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -126,20 +150,34 @@ export default function SearchPage() {
                       key={user._id}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
                     >
-                      <div className="w-9 h-9 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                        {user.name?.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-[14px] text-[var(--text)] truncate">{user.name}</span>
-                          {user.role === "admin" && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                              Admin
-                            </span>
-                          )}
+                      <Link href={`/user/${user._id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                          {user.name?.charAt(0).toUpperCase()}
                         </div>
-                        <p className="text-[12px] text-[var(--text-secondary)] truncate">@{user.username}</p>
-                      </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[14px] text-[var(--text)] truncate">{user.name}</span>
+                            {user.role === "admin" && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[12px] text-[var(--text-secondary)] truncate">@{user.username}</p>
+                        </div>
+                      </Link>
+                      {session?.user?.id !== user._id && (
+                        <button
+                          onClick={() => handleFollow(user._id)}
+                          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                            followingMap[user._id]
+                              ? "bg-[var(--bg-secondary)] text-[var(--text)] border border-[var(--border)]"
+                              : "bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]"
+                          }`}
+                        >
+                          {followingMap[user._id] ? "Unfollow" : "Follow"}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

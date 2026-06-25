@@ -29,9 +29,18 @@ export async function GET(request) {
           { username: regex },
         ],
       })
-        .select("name username role createdAt")
+        .select("name username role followers createdAt")
         .limit(20)
         .lean();
+
+      if (session) {
+        users = users.map((user) => ({
+          ...user,
+          isFollowing: user.followers?.some(
+            (followerId) => followerId.toString() === session.user.id
+          ),
+        }));
+      }
     }
 
     if (type === "all" || type === "post") {

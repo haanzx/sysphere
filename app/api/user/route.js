@@ -13,17 +13,25 @@ export async function GET() {
 
     await dbConnect();
 
-    const user = await User.findById(session.user.id).select("-password").lean();
+    const user = await User.findById(session.user.id)
+      .select("-password")
+      .populate("followers", "name username")
+      .populate("following", "name username")
+      .lean();
 
     if (!user) {
       return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
     }
 
-    if (!user.isActive) {
+    if (user.isActive === false) {
       return NextResponse.json({ error: "Akun telah dinonaktifkan" }, { status: 403 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json({
+      ...user,
+      followersCount: user.followers?.length || 0,
+      followingCount: user.following?.length || 0,
+    });
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data user" }, { status: 500 });
   }

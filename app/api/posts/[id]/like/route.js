@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import Post from "@/models/Post";
+import Notification from "@/models/Notification";
 
 export async function POST(request, { params }) {
   try {
@@ -27,6 +28,15 @@ export async function POST(request, { params }) {
       post.likes.pull(userId);
     } else {
       post.likes.push(userId);
+
+      if (post.author.toString() !== userId) {
+        await Notification.create({
+          user: post.author,
+          from: userId,
+          type: "like",
+          post: post._id,
+        });
+      }
     }
 
     await post.save();

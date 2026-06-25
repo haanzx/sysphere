@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
+import Post from "@/models/Post";
 import Comment from "@/models/Comment";
 import DeleteLog from "@/models/DeleteLog";
+import Notification from "@/models/Notification";
 
 export async function GET(request, { params }) {
   try {
@@ -43,11 +45,23 @@ export async function POST(request, { params }) {
 
     await dbConnect();
 
+    const post = await Post.findById(id);
+
     const comment = await Comment.create({
       content: content.trim(),
       author: session.user.id,
       post: id,
     });
+
+    if (post && post.author.toString() !== session.user.id) {
+      await Notification.create({
+        user: post.author,
+        from: session.user.id,
+        type: "comment",
+        post: post._id,
+        commentContent: content.trim().substring(0, 200),
+      });
+    }
 
     const populatedComment = await Comment.findById(comment._id)
       .populate("author", "name username role")
