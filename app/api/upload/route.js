@@ -1,29 +1,20 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { applyRateLimit } from "@/lib/rateLimit";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;
 
-let cloudinaryInstance = null;
-
-function getCloudinary() {
-  if (!cloudinaryInstance) {
-    const cloudinary = require("cloudinary").v2;
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
-    cloudinaryInstance = cloudinary;
-  }
-  return cloudinaryInstance;
-}
-
 async function uploadToCloudinary(file, folder) {
-  const cloudinary = getCloudinary();
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
@@ -37,11 +28,8 @@ async function uploadToCloudinary(file, folder) {
           allowed_formats: ["jpg", "jpeg", "png", "gif", "webp", "mp4", "mov", "webm"],
         },
         (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
-          }
+          if (error) reject(error);
+          else resolve(result);
         }
       );
       uploadStream.end(buffer);
@@ -56,11 +44,8 @@ async function uploadToCloudinary(file, folder) {
           allowed_formats: ["jpg", "jpeg", "png", "gif", "webp", "mp4", "mov", "webm"],
         },
         (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
-          }
+          if (error) reject(error);
+          else resolve(result);
         }
       );
       uploadStream.end(buffer);
@@ -118,7 +103,6 @@ export async function POST(request) {
 
       if (isRejected) {
         try {
-          const cloudinary = getCloudinary();
           await cloudinary.uploader.destroy(result.public_id, {
             resource_type: result.resource_type,
           });
