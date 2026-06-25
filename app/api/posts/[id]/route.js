@@ -4,6 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import Post from "@/models/Post";
 import Comment from "@/models/Comment";
 import DeleteLog from "@/models/DeleteLog";
+import { validatePostContent, validateMedia } from "@/lib/validation";
 
 export async function GET(request, { params }) {
   try {
@@ -44,13 +45,31 @@ export async function PUT(request, { params }) {
     }
 
     const { id } = await params;
-    const { content } = await request.json();
+    const body = await request.json();
+    const { content, media } = body;
 
-    if (!content || content.trim() === "") {
+    const hasContent = content && content.trim().length > 0;
+    const hasMedia = media && media.url && media.type;
+
+    if (!hasContent && !hasMedia) {
       return NextResponse.json(
-        { error: "Content tidak boleh kosong" },
+        { error: "Postingan harus memiliki konten atau gambar/video" },
         { status: 400 }
       );
+    }
+
+    if (content) {
+      const contentValidation = validatePostContent(content);
+      if (!contentValidation.valid) {
+        return NextResponse.json({ error: contentValidation.error }, { status: 400 });
+      }
+    }
+
+    if (media) {
+      const mediaValidation = validateMedia(media);
+      if (!mediaValidation.valid) {
+        return NextResponse.json({ error: mediaValidation.error }, { status: 400 });
+      }
     }
 
     await dbConnect();
@@ -65,7 +84,18 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Tidak ada akses" }, { status: 403 });
     }
 
-    post.content = content.trim();
+    post.content = content?.trim() || "";
+
+    if (hasMedia) {
+      post.media = {
+        url: media.url,
+        type: media.type,
+        publicId: media.publicId || "",
+      };
+    } else if (media === null) {
+      post.media = { url: "", type: "", publicId: "" };
+    }
+
     await post.save();
 
     const updated = await Post.findById(id)

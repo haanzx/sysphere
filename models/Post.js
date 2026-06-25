@@ -3,12 +3,18 @@ import mongoose from "mongoose";
 const PostSchema = new mongoose.Schema({
   content: {
     type: String,
-    required: true,
+    maxlength: 5000,
+    default: "",
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+  },
+  media: {
+    url: { type: String, default: "" },
+    type: { type: String, enum: ["image", "video", ""], default: "" },
+    publicId: { type: String, default: "" },
   },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,

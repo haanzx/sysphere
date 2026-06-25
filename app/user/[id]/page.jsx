@@ -1,19 +1,26 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import ThemeToggle from "@/components/ThemeToggle";
 import PostCard from "@/components/PostCard";
 
-export default function ProfilePage() {
-  const { data: session, status, update } = useSession();
+export default function UserProfilePage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const params = useParams();
+  const userId = params.id;
+
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("posts");
+
+  const isOwnProfile = session?.user?.id === userId;
 
   useEffect(() => {
     if (status === "loading") return;
@@ -22,18 +29,19 @@ export default function ProfilePage() {
       return;
     }
     fetchUserData();
-  }, [session, status, router]);
+  }, [session, status, router, userId]);
 
   async function fetchUserData() {
     try {
       const [userRes, postsRes] = await Promise.all([
-        fetch("/api/user"),
-        fetch(`/api/user/${session.user.id}/posts`),
+        fetch(`/api/user/${userId}`),
+        fetch(`/api/user/${userId}/posts`),
       ]);
 
       if (userRes.ok) {
         const userData = await userRes.json();
         setUser(userData);
+        setIsFollowing(userData.isFollowing || false);
       }
 
       if (postsRes.ok) {
@@ -41,9 +49,31 @@ export default function ProfilePage() {
         setPosts(postsData);
       }
     } catch (error) {
-      console.error("Gagal load profile");
+      setError("Gagal memuat data");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleFollow() {
+    if (followLoading) return;
+    setFollowLoading(true);
+    try {
+      const method = isFollowing ? "DELETE" : "POST";
+      const res = await fetch(`/api/user/${userId}/follow`, { method });
+      if (res.ok) {
+        setIsFollowing(!isFollowing);
+        setUser((prev) => ({
+          ...prev,
+          followersCount: isFollowing
+            ? (prev.followersCount || 1) - 1
+            : (prev.followersCount || 0) + 1,
+        }));
+      }
+    } catch (error) {
+      console.error("Gagal follow/unfollow");
+    } finally {
+      setFollowLoading(false);
     }
   }
 
@@ -79,23 +109,37 @@ export default function ProfilePage() {
             <h1 className="text-lg font-bold text-[var(--text)]">{user.name}</h1>
             <p className="text-[13px] text-[var(--text-secondary)]">{posts.length} postingan</p>
           </div>
-          <ThemeToggle />
         </div>
       </div>
 
       {/* Profile Info */}
       <div className="px-4 pt-4 pb-3">
-        {/* Avatar & Edit Button */}
+        {/* Avatar & Follow Button */}
         <div className="flex items-start justify-between mb-3">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
             {user.name?.charAt(0).toUpperCase()}
           </div>
-          <Link
-            href="/profile/edit"
-            className="mt-14 px-5 py-1.5 rounded-full border border-[var(--border)] text-[13px] font-semibold text-[var(--text)] hover:bg-[var(--bg-secondary)] transition-all shadow-sm"
-          >
-            Edit profile
-          </Link>
+          {!isOwnProfile && (
+            <button
+              onClick={handleFollow}
+              disabled={followLoading}
+              className={`mt-14 px-6 py-1.5 rounded-full text-[13px] font-bold transition-all shadow-sm ${
+                isFollowing
+                  ? "bg-transparent text-[var(--text)] border border-[var(--border)] hover:border-red-300 hover:text-red-500 hover:bg-red-50"
+                  : "bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]"
+              } disabled:opacity-50`}
+            >
+              {followLoading ? "..." : isFollowing ? "Mengikuti" : "Ikuti"}
+            </button>
+          )}
+          {isOwnProfile && (
+            <Link
+              href="/profile/edit"
+              className="mt-14 px-5 py-1.5 rounded-full border border-[var(--border)] text-[13px] font-semibold text-[var(--text)] hover:bg-[var(--bg-secondary)] transition-all shadow-sm"
+            >
+              Edit profile
+            </Link>
+          )}
         </div>
 
         {/* Name & Username */}
@@ -133,13 +177,13 @@ export default function ProfilePage() {
 
         {/* Stats */}
         <div className="flex gap-5">
-          <Link href="/profile/following" className="group">
+          <Link href={`/user/${userId}/following`} className="group">
             <span className="font-bold text-[var(--text)] group-hover:underline">
               {user.followingCount || 0}
             </span>
             <span className="text-[15px] text-[var(--text-secondary)] ml-1">Mengikuti</span>
           </Link>
-          <Link href="/profile/followers" className="group">
+          <Link href={`/user/${userId}/followers`} className="group">
             <span className="font-bold text-[var(--text)] group-hover:underline">
               {user.followersCount || 0}
             </span>
@@ -178,12 +222,21 @@ export default function ProfilePage() {
         </button>
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="mx-4 mt-3 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-[13px]">
+          {error}
+        </div>
+      )}
+
       {/* Content */}
       <div className="px-4 py-3">
         {activeTab === "posts" ? (
           posts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-[var(--text-secondary)] text-[15px]">Belum ada postingan</p>
+              <p className="text-[var(--text-secondary)] text-[15px]">
+                {isOwnProfile ? "Belum ada postingan" : `${user.name} belum ada postingan`}
+              </p>
             </div>
           ) : (
             posts.map((post) => (

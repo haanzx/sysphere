@@ -80,29 +80,24 @@ export default function CommentOverlay({ post, onClose, onCommentAdded }) {
     <div className="fixed inset-0 z-50 bg-[var(--bg)] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors">
-          <svg className="w-5 h-5 text-[var(--text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <button onClick={onClose} className="p-2 rounded-full hover:bg-[var(--bg-secondary)] transition-colors">
+          <svg className="w-5 h-5 text-[var(--text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
         </button>
-        <h2 className="font-medium text-[15px] text-[var(--text)]">Komentar</h2>
+        <h2 className="font-bold text-[15px] text-[var(--text)]">Komentar</h2>
         <div className="w-8" />
       </div>
 
       {/* Post */}
       <div className="p-4 border-b border-[var(--border)]" style={{ backgroundColor: 'var(--bg-card)' }}>
         <div className="flex gap-3">
-          <div className="w-9 h-9 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0 shadow-sm">
             {post.author?.name?.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-medium text-[14px] text-[var(--text)]">{post.author?.name}</span>
-              {post.author?.role === "admin" && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                  Admin
-                </span>
-              )}
             </div>
             <p className="text-[13px] text-[var(--text-secondary)]">@{post.author?.username} · {timeAgo}</p>
             <p className="text-[14px] text-[var(--text)] mt-2 leading-relaxed whitespace-pre-wrap break-words">{post.content}</p>
@@ -133,16 +128,6 @@ export default function CommentOverlay({ post, onClose, onCommentAdded }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-[13px] text-[var(--text)]">{comment.author?.name}</span>
-                    {comment.author?.role === "admin" && (
-                      <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                        Admin
-                      </span>
-                    )}
-                    {comment.author?.role === "moderator" && (
-                      <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-green-50 text-green-600">
-                        Mod
-                      </span>
-                    )}
                     <span className="text-[11px] text-[var(--text-secondary)]">
                       {new Date(comment.createdAt).toLocaleDateString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                     </span>
@@ -178,12 +163,12 @@ export default function CommentOverlay({ post, onClose, onCommentAdded }) {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Tulis komentar..."
-            className="flex-1 px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder-[var(--text-secondary)] focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] text-[13px]"
+            className="flex-1 px-4 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl text-[var(--text)] placeholder-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] text-[13px] transition-all"
           />
           <button
             type="submit"
             disabled={!newComment.trim() || sending}
-            className="px-3 py-2 bg-[var(--accent)] text-white rounded-lg text-[13px] font-medium disabled:opacity-50 transition-colors"
+            className="px-4 py-2.5 bg-[var(--accent)] text-white rounded-xl text-[13px] font-semibold disabled:opacity-50 hover:bg-[var(--accent-hover)] transition-all shadow-sm"
           >
             Kirim
           </button>

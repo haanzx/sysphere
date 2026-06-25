@@ -15,11 +15,32 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  bio: {
+    type: String,
+    maxlength: 160,
+    default: "",
+  },
   role: {
     type: String,
     enum: ["user", "moderator", "admin"],
     default: "user",
   },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  followers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+  following: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
+import Post from "@/models/Post";
 import Comment from "@/models/Comment";
 import DeleteLog from "@/models/DeleteLog";
+import Notification from "@/models/Notification";
+import { applyRateLimit } from "@/lib/rateLimit";
+import { validateComment } from "@/lib/validation";
 
 export async function GET(request, { params }) {
   try {
@@ -12,10 +16,12 @@ export async function GET(request, { params }) {
 
     const comments = await Comment.find({ post: id })
       .sort({ createdAt: -1 })
-      .populate("author", "name username role")
+      .populate("author", "name username role isActive")
       .lean();
 
-    return NextResponse.json(comments);
+    const activeComments = comments.filter((comment) => comment.author?.isActive !== false);
+
+    return NextResponse.json(activeComments);
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil komentar" }, { status: 500 });
   }
@@ -29,23 +35,45 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await params;
-    const { content } = await request.json();
-
-    if (!content || content.trim() === "") {
+    const rateLimitResult = applyRateLimit(request, "comment", 20, 60000);
+    if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: "Komentar tidak boleh kosong" },
-        { status: 400 }
+        { error: "Terlalu banyak request. Coba lagi dalam beberapa saat." },
+        { status: 429 }
       );
     }
 
+    const { id } = await params;
+    const { content } = await request.json();
+
+    const validation = validateComment(content);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     await dbConnect();
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return NextResponse.json({ error: "Post tidak ditemukan" }, { status: 404 });
+    }
 
     const comment = await Comment.create({
       content: content.trim(),
       author: session.user.id,
       post: id,
     });
+
+    if (post.author.toString() !== session.user.id) {
+      await Notification.create({
+        user: post.author,
+        from: session.user.id,
+        type: "comment",
+        post: post._id,
+        commentContent: content.trim().substring(0, 200),
+      });
+    }
 
     const populatedComment = await Comment.findById(comment._id)
       .populate("author", "name username role")
