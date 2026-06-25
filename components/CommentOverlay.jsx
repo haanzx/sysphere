@@ -98,11 +98,6 @@ export default function CommentOverlay({ post, onClose, onCommentAdded }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-medium text-[14px] text-[var(--text)]">{post.author?.name}</span>
-              {post.author?.role === "admin" && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                  Admin
-                </span>
-              )}
             </div>
             <p className="text-[13px] text-[var(--text-secondary)]">@{post.author?.username} · {timeAgo}</p>
             <p className="text-[14px] text-[var(--text)] mt-2 leading-relaxed whitespace-pre-wrap break-words">{post.content}</p>
@@ -133,16 +128,6 @@ export default function CommentOverlay({ post, onClose, onCommentAdded }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-[13px] text-[var(--text)]">{comment.author?.name}</span>
-                    {comment.author?.role === "admin" && (
-                      <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                        Admin
-                      </span>
-                    )}
-                    {comment.author?.role === "moderator" && (
-                      <span className="px-1 py-0.5 rounded text-[9px] font-medium bg-green-50 text-green-600">
-                        Mod
-                      </span>
-                    )}
                     <span className="text-[11px] text-[var(--text-secondary)]">
                       {new Date(comment.createdAt).toLocaleDateString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                     </span>

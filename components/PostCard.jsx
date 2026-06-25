@@ -103,16 +103,6 @@ export default function PostCard({ post, onLikeToggle, onPostUpdated, onPostDele
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-medium text-[14px] text-[var(--text)]">{post.author?.name}</span>
-              {post.author?.role === "admin" && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                  Admin
-                </span>
-              )}
-              {post.author?.role === "moderator" && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-600">
-                  Mod
-                </span>
-              )}
               <span className="text-[var(--text-secondary)] text-[13px]">·</span>
               <span className="text-[var(--text-secondary)] text-[13px]">{timeAgo}</span>
             </div>

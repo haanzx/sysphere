@@ -19,6 +19,10 @@ export async function GET() {
       return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
     }
 
+    if (!user.isActive) {
+      return NextResponse.json({ error: "Akun telah dinonaktifkan" }, { status: 403 });
+    }
+
     return NextResponse.json(user);
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil data user" }, { status: 500 });

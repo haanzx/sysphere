@@ -11,11 +11,13 @@ export async function GET() {
 
     const posts = await Post.find({})
       .sort({ createdAt: -1 })
-      .populate("author", "name username role")
+      .populate("author", "name username role isActive")
       .lean();
 
+    const activePosts = posts.filter((post) => post.author?.isActive !== false);
+
     const postsWithCounts = await Promise.all(
-      posts.map(async (post) => {
+      activePosts.map(async (post) => {
         const commentCount = await Comment.countDocuments({ post: post._id });
         return {
           ...post,

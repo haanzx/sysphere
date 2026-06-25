@@ -9,14 +9,17 @@ export default function LxAdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [admins, setAdmins] = useState([]);
-  const [moderators, setModerators] = useState([]);
+  const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0, totalComments: 0 });
+  const [users, setUsers] = useState([]);
   const [deleteLogs, setDeleteLogs] = useState([]);
   const [addModUsername, setAddModUsername] = useState("");
   const [addModLoading, setAddModLoading] = useState(false);
+  const [searchUser, setSearchUser] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("moderators");
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  const isAdmin = session?.user?.role === "admin";
 
   useEffect(() => {
     if (status === "loading") return;
@@ -24,7 +27,7 @@ export default function LxAdminPage() {
       router.replace("/login");
       return;
     }
-    if (session.user.role !== "admin") {
+    if (!["admin", "moderator"].includes(session.user.role)) {
       router.replace("/feed");
       return;
     }
@@ -36,8 +39,8 @@ export default function LxAdminPage() {
       const res = await fetch("/api/lxadmin");
       const data = await res.json();
       if (res.ok) {
-        setAdmins(data.admins || []);
-        setModerators(data.moderators || []);
+        setStats(data.stats || {});
+        setUsers(data.users || []);
         setDeleteLogs(data.deleteLogs || []);
       }
     } catch (error) {
@@ -94,6 +97,54 @@ export default function LxAdminPage() {
     }
   }
 
+  async function handleBanUnban(userId, action) {
+    try {
+      const res = await fetch("/api/lxadmin", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error);
+      } else {
+        setMessage(data.message);
+        fetchData();
+      }
+    } catch (error) {
+      setError("Gagal mengubah status user");
+    }
+  }
+
+  async function handleDeleteUser(userId) {
+    if (!confirm("Yakin ingin menghapus user ini?")) return;
+    try {
+      const res = await fetch("/api/lxadmin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error);
+      } else {
+        setMessage(data.message);
+        fetchData();
+      }
+    } catch (error) {
+      setError("Gagal menghapus user");
+    }
+  }
+
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name?.toLowerCase().includes(searchUser.toLowerCase()) ||
+      u.username?.toLowerCase().includes(searchUser.toLowerCase())
+  );
+
+  const moderators = users.filter((u) => u.role === "moderator");
+  const admins = users.filter((u) => u.role === "admin");
+
   if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -102,7 +153,7 @@ export default function LxAdminPage() {
     );
   }
 
-  if (!session || session.user.role !== "admin") return null;
+  if (!session || !["admin", "moderator"].includes(session.user.role)) return null;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -128,31 +179,130 @@ export default function LxAdminPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 px-4 mb-4">
+      <div className="flex gap-1 px-4 mb-4 overflow-x-auto">
         {[
-          { value: "moderators", label: "Moderator" },
-          { value: "admins", label: "Admin" },
+          { value: "dashboard", label: "Dashboard" },
+          { value: "users", label: "Users" },
+          ...(isAdmin ? [{ value: "moderators", label: "Moderator" }] : []),
           { value: "logs", label: "Riwayat" },
         ].map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
-            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors whitespace-nowrap ${
               activeTab === tab.value
                 ? "bg-[var(--accent)] text-white"
                 : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--border)]"
             }`}
           >
             {tab.label}
-            {tab.value === "logs" && deleteLogs.length > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">{deleteLogs.length}</span>
-            )}
           </button>
         ))}
       </div>
 
-      {/* Moderators Tab */}
-      {activeTab === "moderators" && (
+      {/* Dashboard Tab */}
+      {activeTab === "dashboard" && (
+        <div className="px-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-[var(--accent)]">{stats.totalUsers || 0}</p>
+              <p className="text-[12px] text-[var(--text-secondary)] mt-1">Users</p>
+            </div>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-[var(--accent)]">{stats.totalPosts || 0}</p>
+              <p className="text-[12px] text-[var(--text-secondary)] mt-1">Posts</p>
+            </div>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-[var(--accent)]">{stats.totalComments || 0}</p>
+              <p className="text-[12px] text-[var(--text-secondary)] mt-1">Komentar</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Users Tab */}
+      {activeTab === "users" && (
+        <div className="px-4">
+          {/* Search */}
+          <div className="mb-3">
+            <input
+              type="text"
+              value={searchUser}
+              onChange={(e) => setSearchUser(e.target.value)}
+              placeholder="Cari user..."
+              className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder-[var(--text-secondary)] text-[13px] focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
+            />
+          </div>
+
+          {/* Users List */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-[var(--border)]">
+              <h3 className="font-medium text-[13px] text-[var(--text)]">Users ({filteredUsers.length})</h3>
+            </div>
+            {filteredUsers.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <p className="text-[var(--text-secondary)] text-[13px]">Tidak ada user ditemukan</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-[var(--border)]">
+                {filteredUsers.map((user) => (
+                  <div key={user._id} className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center text-[var(--text)] text-sm font-medium">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-[13px] text-[var(--text)]">{user.name}</p>
+                          {user.role === "admin" && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
+                              Admin
+                            </span>
+                          )}
+                          {user.role === "moderator" && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-700">
+                              Mod
+                            </span>
+                          )}
+                          {!user.isActive && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-600">
+                              Banned
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[12px] text-[var(--text-secondary)]">@{user.username}</p>
+                      </div>
+                    </div>
+                    {isAdmin && user.role !== "admin" && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleBanUnban(user._id, user.isActive ? "ban" : "unban")}
+                          className={`px-2 py-1 text-[12px] rounded-md transition-colors ${
+                            user.isActive
+                              ? "text-orange-500 hover:bg-orange-50"
+                              : "text-green-500 hover:bg-green-50"
+                          }`}
+                        >
+                          {user.isActive ? "Ban" : "Unban"}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user._id)}
+                          className="px-2 py-1 text-[12px] text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Moderators Tab (Admin only) */}
+      {activeTab === "moderators" && isAdmin && (
         <div className="px-4">
           {/* Add Moderator */}
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 mb-4">
@@ -207,35 +357,6 @@ export default function LxAdminPage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Admins Tab */}
-      {activeTab === "admins" && (
-        <div className="px-4">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-[var(--border)]">
-              <h3 className="font-medium text-[13px] text-[var(--text)]">Admin ({admins.length})</h3>
-            </div>
-            <div className="divide-y divide-[var(--border)]">
-              {admins.map((admin) => (
-                <div key={admin._id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-8 h-8 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium">
-                    {admin.name?.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-[13px] text-[var(--text)]">{admin.name}</p>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                        Admin
-                      </span>
-                    </div>
-                    <p className="text-[12px] text-[var(--text-secondary)]">@{admin.username}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}

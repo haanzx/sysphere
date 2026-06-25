@@ -12,10 +12,12 @@ export async function GET(request, { params }) {
 
     const comments = await Comment.find({ post: id })
       .sort({ createdAt: -1 })
-      .populate("author", "name username role")
+      .populate("author", "name username role isActive")
       .lean();
 
-    return NextResponse.json(comments);
+    const activeComments = comments.filter((comment) => comment.author?.isActive !== false);
+
+    return NextResponse.json(activeComments);
   } catch (error) {
     return NextResponse.json({ error: "Gagal mengambil komentar" }, { status: 500 });
   }

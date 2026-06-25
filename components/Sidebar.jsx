@@ -41,7 +41,7 @@ export default function Sidebar() {
     },
   ];
 
-  if (session?.user?.role === "admin") {
+  if (["admin", "moderator"].includes(session?.user?.role)) {
     navItems.push({
       href: "/lxadmin",
       label: "lxAdmin",
@@ -101,6 +101,11 @@ export default function Sidebar() {
                   {session.user.role === "admin" && (
                     <span className="px-1 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
                       Admin
+                    </span>
+                  )}
+                  {session.user.role === "moderator" && (
+                    <span className="px-1 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-700">
+                      Mod
                     </span>
                   )}
                 </div>
