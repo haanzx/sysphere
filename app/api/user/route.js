@@ -15,8 +15,6 @@ export async function GET() {
 
     const user = await User.findById(session.user.id)
       .select("-password")
-      .populate("followers", "name username")
-      .populate("following", "name username")
       .lean();
 
     if (!user) {
@@ -33,6 +31,7 @@ export async function GET() {
       followingCount: user.following?.length || 0,
     });
   } catch (error) {
+    console.error("GET /api/user error:", error);
     return NextResponse.json({ error: "Gagal mengambil data user" }, { status: 500 });
   }
 }
@@ -64,6 +63,7 @@ export async function PUT(request) {
 
     return NextResponse.json({ message: "Profile berhasil diupdate", user });
   } catch (error) {
+    console.error("PUT /api/user error:", error);
     return NextResponse.json({ error: "Gagal update profile" }, { status: 500 });
   }
 }
