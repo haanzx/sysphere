@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function RegisterPage() {
   const { data: session, status } = useSession();
@@ -11,10 +11,11 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const registered = useRef(false);
 
   useEffect(() => {
     if (status === "loading") return;
-    if (session) router.replace("/feed");
+    if (session && !registered.current) router.replace("/feed");
   }, [session, status, router]);
 
   async function handleRegister(e) {
@@ -35,7 +36,8 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error || "Gagal register");
       } else {
-        window.location.href = "/login";
+        registered.current = true;
+        router.replace("/login");
       }
     } catch (err) {
       setError("Gagal register. Coba lagi.");
