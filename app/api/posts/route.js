@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import Post from "@/models/Post";
 import Comment from "@/models/Comment";
+import { applyRateLimit } from "@/lib/rateLimit";
+import { validatePostContent, validateMedia } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -44,27 +46,64 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { content } = await request.json();
-
-    if (!content || content.trim() === "") {
+    const rateLimitResult = applyRateLimit(request, "create-post", 10, 60000);
+    if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: "Content tidak boleh kosong" },
+        { error: "Terlalu banyak request. Coba lagi dalam beberapa saat." },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json();
+    const { content, media } = body;
+
+    const hasContent = content && content.trim().length > 0;
+    const hasMedia = media && media.url && media.type;
+
+    if (!hasContent && !hasMedia) {
+      return NextResponse.json(
+        { error: "Postingan harus memiliki konten atau gambar/video" },
         { status: 400 }
       );
     }
 
+    if (content) {
+      const contentValidation = validatePostContent(content);
+      if (!contentValidation.valid) {
+        return NextResponse.json({ error: contentValidation.error }, { status: 400 });
+      }
+    }
+
+    if (media) {
+      const mediaValidation = validateMedia(media);
+      if (!mediaValidation.valid) {
+        return NextResponse.json({ error: mediaValidation.error }, { status: 400 });
+      }
+    }
+
     await dbConnect();
 
-    const post = await Post.create({
-      content,
+    const postData = {
+      content: content?.trim() || "",
       author: session.user.id,
-    });
+    };
+
+    if (hasMedia) {
+      postData.media = {
+        url: media.url,
+        type: media.type,
+        publicId: media.publicId || "",
+      };
+    }
+
+    const post = await Post.create(postData);
 
     return NextResponse.json(
       { message: "Post berhasil dibuat", postId: post._id },
       { status: 201 }
     );
   } catch (error) {
+    console.error("POST /api/posts error:", error);
     return NextResponse.json({ error: "Gagal membuat post" }, { status: 500 });
   }
 }

@@ -77,7 +77,7 @@ export default function SearchPage() {
     <div className="max-w-xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 mb-2">
-        <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors">
+        <button onClick={() => router.back()} className="p-2 rounded-full hover:bg-[var(--bg-secondary)] transition-colors">
           <svg className="w-5 h-5 text-[var(--text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
@@ -151,7 +151,7 @@ export default function SearchPage() {
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
                     >
                       <Link href={`/user/${user._id}`} className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0 shadow-sm">
                           {user.name?.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -169,9 +169,9 @@ export default function SearchPage() {
                       {session?.user?.id !== user._id && (
                         <button
                           onClick={() => handleFollow(user._id)}
-                          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors shadow-sm ${
                             followingMap[user._id]
-                              ? "bg-[var(--bg-secondary)] text-[var(--text)] border border-[var(--border)]"
+                              ? "bg-transparent text-[var(--text)] border border-[var(--border)] hover:border-red-300 hover:text-red-500"
                               : "bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]"
                           }`}
                         >

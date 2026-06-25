@@ -4,9 +4,18 @@ import dbConnect from "@/lib/mongodb";
 import Post from "@/models/Post";
 import User from "@/models/User";
 import Comment from "@/models/Comment";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 export async function GET(request) {
   try {
+    const rateLimitResult = applyRateLimit(request, "search", 30, 60000);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak request. Coba lagi dalam beberapa saat." },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q") || "";
     const type = searchParams.get("type") || "all";
@@ -18,7 +27,8 @@ export async function GET(request) {
     const session = await auth();
     await dbConnect();
 
-    const regex = new RegExp(q.trim(), "i");
+    const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "i");
     let users = [];
     let posts = [];
 

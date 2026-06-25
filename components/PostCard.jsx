@@ -94,10 +94,10 @@ export default function PostCard({ post, onLikeToggle, onPostUpdated, onPostDele
 
   return (
     <>
-      <article className="bg-[var(--bg-card)] rounded-lg p-4 mb-3 border border-[var(--border)]">
+      <article className="bg-[var(--bg-card)] rounded-xl p-4 mb-3 border border-[var(--border)] shadow-sm hover:shadow-md transition-shadow">
         {/* Header */}
         <div className="flex items-start gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0 shadow-sm">
             {post.author?.name?.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -158,7 +158,7 @@ export default function PostCard({ post, onLikeToggle, onPostUpdated, onPostDele
             <textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-3 text-[14px] text-[var(--text)] resize-none focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
+              className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-3 text-[14px] text-[var(--text)] resize-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
               rows={3}
               autoFocus
             />
@@ -168,21 +168,44 @@ export default function PostCard({ post, onLikeToggle, onPostUpdated, onPostDele
                   setIsEditing(false);
                   setEditContent(currentContent);
                 }}
-                className="px-3 py-1 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-md transition-colors"
+                className="px-3 py-1 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={isSaving || !editContent.trim() || editContent === currentContent}
-                className="px-3 py-1 text-[12px] text-white bg-[var(--accent)] rounded-md hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
+                className="px-3 py-1 text-[12px] text-white bg-[var(--accent)] rounded-lg hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-all"
               >
                 {isSaving ? "..." : "Simpan"}
               </button>
             </div>
           </div>
         ) : (
-          <p className="text-[14px] text-[var(--text)] leading-relaxed whitespace-pre-wrap break-words mb-3">{currentContent}</p>
+          <>
+            {currentContent && (
+              <p className="text-[14px] text-[var(--text)] leading-relaxed whitespace-pre-wrap break-words mb-3">{currentContent}</p>
+            )}
+          </>
+        )}
+
+        {/* Media */}
+        {!isEditing && post.media?.url && (
+          <div className="mb-3">
+            {post.media.type === "image" ? (
+              <img
+                src={post.media.url}
+                alt="Post image"
+                className="w-full max-h-96 object-cover rounded-xl border border-[var(--border)]"
+              />
+            ) : post.media.type === "video" ? (
+              <video
+                src={post.media.url}
+                className="w-full max-h-96 rounded-xl border border-[var(--border)]"
+                controls
+              />
+            ) : null}
+          </div>
         )}
 
         {/* Actions */}
@@ -218,20 +241,20 @@ export default function PostCard({ post, onLikeToggle, onPostUpdated, onPostDele
 
       {/* Delete Confirm */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowDeleteConfirm(false)}>
-          <div className="bg-[var(--bg-card)] rounded-xl p-5 w-full max-w-sm border border-[var(--border)]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[16px] font-semibold text-[var(--text)] mb-1">Hapus post?</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="bg-[var(--bg-card)] rounded-2xl p-5 w-full max-w-sm border border-[var(--border)] shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[16px] font-bold text-[var(--text)] mb-1">Hapus post?</h3>
             <p className="text-[13px] text-[var(--text-secondary)] mb-5">Tidak bisa dikembalikan.</p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-3 py-1.5 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-colors"
+                className="px-4 py-2 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={handleDelete}
-                className="px-3 py-1.5 text-[13px] text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                className="px-4 py-2 text-[13px] text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
               >
                 Hapus
               </button>

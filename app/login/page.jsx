@@ -46,17 +46,17 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg)]">
       <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold text-sm">
+        <div className="flex items-center gap-2.5 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white font-bold text-base shadow-md">
             S
           </div>
-          <span className="text-lg font-bold text-[var(--text)]">Sosmed</span>
+          <span className="text-xl font-bold text-[var(--text)]">Sosmed</span>
         </div>
 
-        <h1 className="text-xl font-bold mb-6 text-[var(--text)]">Masuk ke akunmu</h1>
+        <h1 className="text-2xl font-bold mb-6 text-[var(--text)]">Masuk ke akunmu</h1>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg mb-4 text-[13px]">
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-4 text-[13px] font-medium shadow-sm">
             {error}
           </div>
         )}
@@ -68,7 +68,7 @@ export default function LoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full px-3 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder-[var(--text-secondary)] focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] text-[14px]"
+            className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl text-[var(--text)] placeholder-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] text-[14px] transition-all"
           />
           <input
             type="password"
@@ -76,12 +76,12 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-3 py-2.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder-[var(--text-secondary)] focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] text-[14px]"
+            className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl text-[var(--text)] placeholder-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] text-[14px] transition-all"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[var(--accent)] text-white py-2.5 rounded-lg text-[14px] font-medium hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
+            className="w-full bg-[var(--accent)] text-white py-3 rounded-xl text-[14px] font-semibold hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-all shadow-sm"
           >
             {loading ? "Masuk..." : "Masuk"}
           </button>
@@ -89,7 +89,7 @@ export default function LoginPage() {
 
         <p className="text-center text-[var(--text-secondary)] text-[13px] mt-6">
           Belum punya akun?{" "}
-          <Link href="/register" className="text-[var(--accent)] font-medium hover:underline">
+          <Link href="/register" className="text-[var(--accent)] font-semibold hover:underline">
             Daftar
           </Link>
         </p>

@@ -65,8 +65,8 @@ export default function Sidebar() {
     <aside className="hidden md:flex md:flex-col md:w-[72px] xl:w-[240px] md:fixed md:inset-y-0 z-30">
       <div className="flex flex-col h-full px-3 py-4">
         {/* Logo */}
-        <Link href="/feed" className="flex items-center justify-center xl:justify-start xl:px-3 xl:gap-2.5 w-full h-12 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors mb-4">
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold text-sm">
+        <Link href="/feed" className="flex items-center justify-center xl:justify-start xl:px-3 xl:gap-2.5 w-full h-12 rounded-xl hover:bg-[var(--bg-secondary)] transition-all mb-4">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
             S
           </div>
           <span className="hidden xl:inline text-lg font-bold text-[var(--text)]">
@@ -82,9 +82,9 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                   isActive
-                    ? "bg-[var(--accent-light)] text-[var(--accent)] font-medium"
+                    ? "bg-[var(--accent)] text-white font-semibold shadow-sm"
                     : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text)]"
                 }`}
               >

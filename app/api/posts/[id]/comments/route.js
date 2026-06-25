@@ -5,6 +5,8 @@ import Post from "@/models/Post";
 import Comment from "@/models/Comment";
 import DeleteLog from "@/models/DeleteLog";
 import Notification from "@/models/Notification";
+import { applyRateLimit } from "@/lib/rateLimit";
+import { validateComment } from "@/lib/validation";
 
 export async function GET(request, { params }) {
   try {
@@ -33,19 +35,29 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const rateLimitResult = applyRateLimit(request, "comment", 20, 60000);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak request. Coba lagi dalam beberapa saat." },
+        { status: 429 }
+      );
+    }
+
     const { id } = await params;
     const { content } = await request.json();
 
-    if (!content || content.trim() === "") {
-      return NextResponse.json(
-        { error: "Komentar tidak boleh kosong" },
-        { status: 400 }
-      );
+    const validation = validateComment(content);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     await dbConnect();
 
     const post = await Post.findById(id);
+
+    if (!post) {
+      return NextResponse.json({ error: "Post tidak ditemukan" }, { status: 404 });
+    }
 
     const comment = await Comment.create({
       content: content.trim(),
@@ -53,7 +65,7 @@ export async function POST(request, { params }) {
       post: id,
     });
 
-    if (post && post.author.toString() !== session.user.id) {
+    if (post.author.toString() !== session.user.id) {
       await Notification.create({
         user: post.author,
         from: session.user.id,

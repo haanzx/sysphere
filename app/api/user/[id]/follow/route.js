@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 export async function POST(request, { params }) {
   try {
@@ -10,6 +11,14 @@ export async function POST(request, { params }) {
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimitResult = applyRateLimit(request, "follow", 20, 60000);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak request. Coba lagi dalam beberapa saat." },
+        { status: 429 }
+      );
     }
 
     const { id } = await params;

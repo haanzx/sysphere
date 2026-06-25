@@ -101,12 +101,12 @@ export default function NotificationsPage() {
             {notifications.map((notif) => (
               <div
                 key={notif._id}
-                className={`bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4 ${
+                className={`bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4 ${
                   !notif.read ? "border-l-2 border-l-[var(--accent)]" : ""
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0 shadow-sm">
                     {notif.from?.name?.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">

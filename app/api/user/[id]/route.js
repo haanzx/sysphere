@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
     await dbConnect();
 
     const user = await User.findById(id)
-      .select("name username role followers following createdAt")
+      .select("name username role bio followers following createdAt")
       .lean();
 
     if (!user) {
@@ -34,6 +34,7 @@ export async function GET(request, { params }) {
       name: user.name,
       username: user.username,
       role: user.role,
+      bio: user.bio || "",
       createdAt: user.createdAt,
       followersCount: user.followers?.length || 0,
       followingCount: user.following?.length || 0,

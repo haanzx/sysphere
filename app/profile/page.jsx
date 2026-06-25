@@ -5,19 +5,15 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
+import PostCard from "@/components/PostCard";
 
 export default function ProfilePage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
   const [user, setUser] = useState(null);
-  const [name, setName] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [posts, setPosts] = useState([]);
+  const [activeTab, setActiveTab] = useState("posts");
 
   useEffect(() => {
     if (status === "loading") return;
@@ -25,78 +21,29 @@ export default function ProfilePage() {
       router.replace("/login");
       return;
     }
-    fetchUser();
+    fetchUserData();
   }, [session, status, router]);
 
-  async function fetchUser() {
+  async function fetchUserData() {
     try {
-      const res = await fetch("/api/user");
-      const data = await res.json();
-      if (res.ok) {
-        setUser(data);
-        setName(data.name);
+      const [userRes, postsRes] = await Promise.all([
+        fetch("/api/user"),
+        fetch(`/api/user/${session.user.id}/posts`),
+      ]);
+
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        setUser(userData);
+      }
+
+      if (postsRes.ok) {
+        const postsData = await postsRes.json();
+        setPosts(postsData);
       }
     } catch (error) {
       console.error("Gagal load profile");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleUpdateName(e) {
-    e.preventDefault();
-    setSaving(true);
-    setError("");
-    setMessage("");
-    try {
-      const res = await fetch("/api/user", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Gagal update");
-      } else {
-        setMessage("Nama berhasil diupdate!");
-        setUser(data);
-        await update({ name: data.name });
-      }
-    } catch (error) {
-      setError("Gagal update profile");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleChangePassword(e) {
-    e.preventDefault();
-    setChangingPassword(true);
-    setError("");
-    setMessage("");
-    if (newPassword.length < 6) {
-      setError("Password baru minimal 6 karakter");
-      setChangingPassword(false);
-      return;
-    }
-    try {
-      const res = await fetch("/api/user/password", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Gagal ubah password");
-      } else {
-        setMessage("Password berhasil diubah!");
-        setCurrentPassword("");
-        setNewPassword("");
-      }
-    } catch (error) {
-      setError("Gagal ubah password");
-    } finally {
-      setChangingPassword(false);
     }
   }
 
@@ -111,125 +58,147 @@ export default function ProfilePage() {
   if (!session || !user) return null;
 
   const joinDate = new Date(user.createdAt).toLocaleDateString("id-ID", {
-    day: "numeric",
     month: "long",
     year: "numeric",
   });
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 mb-4">
-        <h1 className="text-xl font-bold text-[var(--text)]">Profil</h1>
-        <ThemeToggle />
+      <div className="sticky top-0 z-10 bg-[var(--bg)]/80 backdrop-blur-md border-b border-[var(--border)]">
+        <div className="flex items-center gap-4 px-4 py-3">
+          <button
+            onClick={() => router.back()}
+            className="p-2 rounded-full hover:bg-[var(--bg-secondary)] transition-colors"
+          >
+            <svg className="w-5 h-5 text-[var(--text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-[var(--text)]">{user.name}</h1>
+            <p className="text-[13px] text-[var(--text-secondary)]">{posts.length} postingan</p>
+          </div>
+          <ThemeToggle />
+        </div>
       </div>
 
-      {/* Profile */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-16 h-16 rounded-full bg-[var(--accent)] flex items-center justify-center text-white text-2xl font-bold">
-            {user.name.charAt(0).toUpperCase()}
+      {/* Profile Info */}
+      <div className="px-4 pt-4 pb-3">
+        {/* Avatar & Edit Button */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[var(--accent)] to-sky-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+            {user.name?.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-[var(--text)]">{user.name}</h2>
-              {user.role === "admin" && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
-                  Admin
-                </span>
-              )}
-              {user.role === "moderator" && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-700">
-                  Mod
-                </span>
-              )}
-            </div>
-            <p className="text-[13px] text-[var(--text-secondary)]">@{user.username}</p>
-            <p className="text-[12px] text-[var(--text-secondary)]">Bergabung {joinDate}</p>
+          <Link
+            href="/profile/edit"
+            className="mt-14 px-5 py-1.5 rounded-full border border-[var(--border)] text-[13px] font-semibold text-[var(--text)] hover:bg-[var(--bg-secondary)] transition-all shadow-sm"
+          >
+            Edit profile
+          </Link>
+        </div>
+
+        {/* Name & Username */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-[var(--text)]">{user.name}</h2>
+            {user.role === "admin" && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-light)] text-[var(--accent)]">
+                Admin
+              </span>
+            )}
+            {user.role === "moderator" && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-700">
+                Mod
+              </span>
+            )}
           </div>
+          <p className="text-[15px] text-[var(--text-secondary)]">@{user.username}</p>
+        </div>
+
+        {/* Bio */}
+        {user.bio && (
+          <p className="text-[15px] text-[var(--text)] leading-relaxed mb-3 whitespace-pre-wrap break-words">
+            {user.bio}
+          </p>
+        )}
+
+        {/* Join Date */}
+        <div className="flex items-center gap-1.5 text-[var(--text-secondary)] mb-3">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+          </svg>
+          <span className="text-[13px]">Bergabung {joinDate}</span>
         </div>
 
         {/* Stats */}
-        <div className="flex gap-6">
-          <Link href="/profile/following" className="text-center">
-            <p className="font-bold text-[var(--text)]">{user.followingCount || 0}</p>
-            <p className="text-[12px] text-[var(--text-secondary)]">Mengikuti</p>
+        <div className="flex gap-5">
+          <Link href="/profile/following" className="group">
+            <span className="font-bold text-[var(--text)] group-hover:underline">
+              {user.followingCount || 0}
+            </span>
+            <span className="text-[15px] text-[var(--text-secondary)] ml-1">Mengikuti</span>
           </Link>
-          <Link href="/profile/followers" className="text-center">
-            <p className="font-bold text-[var(--text)]">{user.followersCount || 0}</p>
-            <p className="text-[12px] text-[var(--text-secondary)]">Pengikut</p>
+          <Link href="/profile/followers" className="group">
+            <span className="font-bold text-[var(--text)] group-hover:underline">
+              {user.followersCount || 0}
+            </span>
+            <span className="text-[15px] text-[var(--text-secondary)] ml-1">Pengikut</span>
           </Link>
         </div>
       </div>
 
-      {/* Messages */}
-      {message && (
-        <div className="mx-4 mb-3 bg-green-50 border border-green-200 text-green-600 px-3 py-2 rounded-lg text-[13px]">
-          {message}
-        </div>
-      )}
-      {error && (
-        <div className="mx-4 mb-3 bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-[13px]">
-          {error}
-        </div>
-      )}
-
-      {/* Edit Name */}
-      <div className="mx-4 mb-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4">
-        <h3 className="font-medium text-[14px] text-[var(--text)] mb-3">Ubah Nama</h3>
-        <form onSubmit={handleUpdateName} className="flex gap-2">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="flex-1 px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text)] text-[13px] focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
-          />
-          <button
-            type="submit"
-            disabled={saving || name === user.name}
-            className="px-3 py-2 bg-[var(--accent)] text-white rounded-lg text-[13px] font-medium hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
-          >
-            {saving ? "..." : "Simpan"}
-          </button>
-        </form>
-      </div>
-
-      {/* Change Password */}
-      <div className="mx-4 mb-6 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-4">
-        <h3 className="font-medium text-[14px] text-[var(--text)] mb-3">Ubah Password</h3>
-        <form onSubmit={handleChangePassword} className="space-y-2">
-          <input
-            type="password"
-            placeholder="Password saat ini"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder-[var(--text-secondary)] text-[13px] focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
-          />
-          <input
-            type="password"
-            placeholder="Password baru"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text)] placeholder-[var(--text-secondary)] text-[13px] focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
-          />
-          <button
-            type="submit"
-            disabled={changingPassword || !currentPassword || !newPassword}
-            className="w-full py-2 bg-[var(--bg-secondary)] text-[var(--text)] border border-[var(--border)] rounded-lg text-[13px] font-medium hover:bg-[var(--border)] disabled:opacity-50 transition-colors"
-          >
-            {changingPassword ? "Mengubah..." : "Ubah Password"}
-          </button>
-        </form>
-      </div>
-
-      {/* Logout */}
-      <div className="mx-4 mb-6">
+      {/* Tabs */}
+      <div className="flex border-b border-[var(--border)]">
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full py-2.5 bg-red-50 text-red-500 border border-red-200 rounded-lg text-[13px] font-medium hover:bg-red-100 transition-colors"
+          onClick={() => setActiveTab("posts")}
+          className={`flex-1 py-3 text-[14px] font-medium text-center transition-colors relative ${
+            activeTab === "posts"
+              ? "text-[var(--text)] font-bold"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
+          }`}
         >
-          Keluar
+          Postingan
+          {activeTab === "posts" && (
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-[3px] bg-[var(--accent)] rounded-full" />
+          )}
         </button>
+        <button
+          onClick={() => setActiveTab("replies")}
+          className={`flex-1 py-3 text-[14px] font-medium text-center transition-colors relative ${
+            activeTab === "replies"
+              ? "text-[var(--text)] font-bold"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
+          }`}
+        >
+          Balasan
+          {activeTab === "replies" && (
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-[3px] bg-[var(--accent)] rounded-full" />
+          )}
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 py-3">
+        {activeTab === "posts" ? (
+          posts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-[var(--text-secondary)] text-[15px]">Belum ada postingan</p>
+            </div>
+          ) : (
+            posts.map((post) => (
+              <PostCard
+                key={post._id}
+                post={post}
+                onPostDeleted={(id) => setPosts((prev) => prev.filter((p) => p._id !== id))}
+              />
+            ))
+          )
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-[var(--text-secondary)] text-[15px]">Belum ada balasan</p>
+          </div>
+        )}
       </div>
     </div>
   );

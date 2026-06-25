@@ -86,8 +86,8 @@ export default function BottomNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 px-4 pb-2">
       <div
-        className="flex justify-around items-center h-14 rounded-xl border"
-        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
+        className="flex justify-around items-center h-14 rounded-2xl border border-[var(--border)] shadow-lg"
+        style={{ backgroundColor: 'var(--bg-card)' }}
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href === "/feed" && pathname === "/");
@@ -95,9 +95,9 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${
+              className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all ${
                 isActive
-                  ? "text-[var(--accent)]"
+                  ? "text-[var(--accent)] bg-[var(--accent-light)]"
                   : "text-[var(--text-secondary)]"
               }`}
             >
